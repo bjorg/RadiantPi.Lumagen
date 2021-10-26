@@ -1,6 +1,6 @@
 # Release Notes
 
-## v1.1 (TBD)
+## v1.1 (2021-10-26)
 
 ### BREAKING CHANGES
 
