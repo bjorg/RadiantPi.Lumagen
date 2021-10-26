@@ -29,8 +29,7 @@ using var client = new RadianceProClient(new RadianceProClientConfig {
 });
 
 // show message
-Console.WriteLine("Hello World!!!");
-await client.ShowMessageAsync("   Hello World!!!   ", 5);
+await client.ShowMessageAsync("Hello World!!!", 5);
 ```
 
 ## Sample: Listen for events
@@ -42,7 +41,6 @@ Use `DisplayModeChanged` to listen to events, such as input or content changes.
 client.DisplayModeChanged += ShowDisplayMode;
 
 // wait until the enter key is pressed
-Console.WriteLine("Listening for events. Press ENTER to exit.");
 Console.ReadLine();
 
 // remove event handler
@@ -50,8 +48,7 @@ client.DisplayModeChanged -= ShowDisplayMode;
 
 // function acting on events
 void ShowDisplayMode(object? sender, DisplayModeChangedEventArgs args) {
-    Console.WriteLine("=== MODE INFO ===");
-    Console.WriteLine();
+    Console.WriteLine("=== DISPLAY MODE ===");
     Console.WriteLine(JsonSerializer.Serialize(args.DisplayMode, new JsonSerializerOptions {
         WriteIndented = true
     }));

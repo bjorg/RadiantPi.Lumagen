@@ -20,7 +20,7 @@ client.DisplayModeChanged -= ShowDisplayMode;
 
 // function acting on events
 void ShowDisplayMode(object? sender, DisplayModeChangedEventArgs args) {
-    Console.WriteLine("=== MODE INFO ===");
+    Console.WriteLine("=== DISPLAY MODE ===");
     Console.WriteLine();
     Console.WriteLine(JsonSerializer.Serialize(args.DisplayMode, new JsonSerializerOptions {
         WriteIndented = true

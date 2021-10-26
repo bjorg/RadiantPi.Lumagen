@@ -29,7 +29,7 @@ client.DisplayModeChanged -= ShowDisplayMode;
 
 // function acting on events
 void ShowDisplayMode(object? sender, DisplayModeChangedEventArgs args) {
-    Console.WriteLine("=== MODE INFO ===");
+    Console.WriteLine("=== DISPLAY MODE ===");
     Console.WriteLine();
     Console.WriteLine(JsonSerializer.Serialize(args.DisplayMode, new JsonSerializerOptions {
         WriteIndented = true
@@ -41,7 +41,7 @@ void ShowDisplayMode(object? sender, DisplayModeChangedEventArgs args) {
 ```
 Listening for events. Press ENTER to exit.
 
-=== MODE INFO ===
+=== DISPLAY MODE ===
 {
   "InputStatus": 2,
   "VirtualInputSelected": 1,

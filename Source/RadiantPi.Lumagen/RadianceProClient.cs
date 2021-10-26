@@ -350,7 +350,7 @@ namespace RadiantPi.Lumagen {
             var prefix = response.Substring(0, 4);
             if(prefix.StartsWith("!", StringComparison.Ordinal)) {
 
-                // parse mode information event
+                // parse display mode information event
                 const string DISPLAY_MODE_RESPONSE_V1 = "!I21";
                 const string DISPLAY_MODE_RESPONSE_V2 = "!I22";
                 const string DISPLAY_MODE_RESPONSE_V3 = "!I23";
