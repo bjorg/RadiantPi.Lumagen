@@ -1,6 +1,9 @@
-# RadiantPi.Lumagen - ShowModeInfo
+# RadiantPi.Lumagen - HelloWorld
 
 Display a message on a RadiancePro.
+
+Requires the Lumagen RadiancePro to have Echo enabled:
+* MENU → Other → I/O Setup → RS-232 Setup → Echo → On
 
 ```csharp
 using System;
@@ -16,9 +19,3 @@ using var client = new RadianceProClient(new RadianceProClientConfig {
 Console.WriteLine("Hello World!!!");
 await client.ShowMessageAsync("   Hello World!!!   ", 5);
 ```
-
-# License
-
-This application is distributed under the GNU Affero General Public License v3.0 or later.
-
-Copyright (C) 2020-2021 - Steve G. Bjorg
