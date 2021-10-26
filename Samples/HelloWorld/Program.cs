@@ -1,7 +1,7 @@
 ﻿using RadiantPi.Lumagen;
 
 // initialize client
-var client = new RadianceProClient(new RadianceProClientConfig {
+using var client = new RadianceProClient(new RadianceProClientConfig {
     PortName = "/dev/ttyUSB0",
     BaudRate = 9600
 });
