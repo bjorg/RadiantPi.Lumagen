@@ -1,10 +1,17 @@
 # RadiantPi.Lumagen
 
-`RadianceProClient` enables control of a Lumange RadiancePro over a RS-232 connection. The library is platform agnostic, working on Windows or Linux, including on a Raspberry Pi.
+`RadianceProClient` enables control of a Lumagen RadiancePro over a RS-232 connection. The library is platform agnostic and works on Windows or Linux, including on a Raspberry Pi.
+
+Run the `dotnet` command from your project folder to add the `RadiantPi.Lumagen` assembly:
+```
+dotnet add package RadiantPi.Lumagen
+```
+
+Find a description of the latest changes in the [release notes](ReleaseNotes.md).
 
 ## RadiancePro Setup
 
-The client resquires the Lumagen RadiancePro to have Echo enabled:
+`RadianceProClient` requires the Lumagen RadiancePro to have Echo enabled:
 * MENU → Other → I/O Setup → RS-232 Setup → Echo → On
 
 As well as report mode changes set to Fullv4:
