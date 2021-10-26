@@ -16,7 +16,7 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-// disable warning CS0067: The event 'RadianceProMockClient.ModeInfoChanged' is never used
+// NOTE: disable warning CS0067: The event 'RadianceProMockClient.DisplayModeChanged' is never used
 #pragma warning disable CS0067
 
 using System;
@@ -110,14 +110,14 @@ namespace RadiantPi.Lumagen.Utility {
         };
 
         //--- Events ---
-        public event EventHandler<ModeInfoChangedEventArgs>? ModeInfoChanged;
+        public event EventHandler<DisplayModeChangedEventArgs>? DisplayModeChanged;
 
         //--- Methods ---
         public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync()
             => new GetDeviceInfoResponse("RadianceXD", "102308", "1009", "745");
 
-        public async Task<GetModeInfoResponse> GetModeInfoAsync()
-            => new GetModeInfoResponse {
+        public async Task<GetDisplayModeResponse> GetDisplayModeAsync()
+            => new GetDisplayModeResponse {
                 InputStatus = RadianceProInputStatus.ActiveVideo,
                 SourceVerticalRate = "023",
                 SourceVerticalResolution = "1080",

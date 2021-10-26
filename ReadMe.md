@@ -1,10 +1,17 @@
 # RadiantPi.Lumagen
 
-`RadianceProClient` enables control of a Lumange RadiancePro over a RS-232 connection. The library is platform agnostic, working on Windows or Linux, including on a Raspberry Pi.
+`RadianceProClient` enables control of a Lumagen RadiancePro over a RS-232 connection. The library is platform agnostic and works on Windows or Linux, including on a Raspberry Pi.
+
+Run the `dotnet` command from your project folder to add the `RadiantPi.Lumagen` assembly:
+```
+dotnet add package RadiantPi.Lumagen
+```
+
+Find a description of the latest changes in the [release notes](ReleaseNotes.md).
 
 ## RadiancePro Setup
 
-The client resquires the Lumagen RadiancePro to have Echo enabled:
+`RadianceProClient` requires the Lumagen RadiancePro to have Echo enabled:
 * MENU → Other → I/O Setup → RS-232 Setup → Echo → On
 
 As well as report mode changes set to Fullv4:
@@ -22,30 +29,27 @@ using var client = new RadianceProClient(new RadianceProClientConfig {
 });
 
 // show message
-Console.WriteLine("Hello World!!!");
-await client.ShowMessageAsync("   Hello World!!!   ", 5);
+await client.ShowMessageAsync("Hello World!!!", 5);
 ```
 
 ## Sample: Listen for events
 
-Use `ModeInfoChanged` to listen to events, such as input or content changes.
+Use `DisplayModeChanged` to listen to events, such as input or content changes.
 
 ```csharp
 // hook-up event handler
-client.ModeInfoChanged += ShowModeInfo;
+client.DisplayModeChanged += ShowDisplayMode;
 
 // wait until the enter key is pressed
-Console.WriteLine("Listening for events. Press ENTER to exit.");
 Console.ReadLine();
 
 // remove event handler
-client.ModeInfoChanged -= ShowModeInfo;
+client.DisplayModeChanged -= ShowDisplayMode;
 
 // function acting on events
-void ShowModeInfo(object? sender, ModeInfoChangedEventArgs args) {
-    Console.WriteLine("=== MODE INFO ===");
-    Console.WriteLine();
-    Console.WriteLine(JsonSerializer.Serialize(args.ModeInfo, new JsonSerializerOptions {
+void ShowDisplayMode(object? sender, DisplayModeChangedEventArgs args) {
+    Console.WriteLine("=== DISPLAY MODE ===");
+    Console.WriteLine(JsonSerializer.Serialize(args.DisplayMode, new JsonSerializerOptions {
         WriteIndented = true
     }));
 }
