@@ -21,6 +21,7 @@ using System.Globalization;
 using System.IO;
 using System.IO.Ports;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -39,6 +40,14 @@ namespace RadiantPi.Lumagen {
     }
 
     public sealed class RadianceProClient : IRadiancePro {
+
+        //--- Class Fields ---
+        private static readonly JsonSerializerOptions g_jsonSerializerOptions = new() {
+            WriteIndented = true,
+            Converters = {
+                new JsonStringEnumConverter()
+            }
+        };
 
         //--- Class Methods ---
         private static string ToCommandCode(RadianceProMemory memory, bool allowAll)
@@ -136,7 +145,7 @@ namespace RadiantPi.Lumagen {
             _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
             _serialPort.DataReceived += SerialDataReceived;
             _serialPort.Open();
-            _logger?.LogInformation("serial port is open");
+            _logger?.LogInformation("Serial port is open");
         }
 
         public RadianceProClient(string portName, int baudRate = 9600, ILogger<RadianceProClient>? logger = null) : this(new SerialPort {
@@ -152,44 +161,64 @@ namespace RadiantPi.Lumagen {
 
         //--- Methods ---
         public async Task<GetDeviceInfoResponse> GetDeviceInfoAsync() {
+            _logger?.LogDebug("GetDeviceInfoAsync request");
             var response = await QueryAsync("ZQS01").ConfigureAwait(false);
             var data = response.Split(",");
             if(data.Length < 4) {
                 throw new InvalidDataException("invalid response");
             }
-            return LogResponse(new GetDeviceInfoResponse(data[0], data[1], data[2], data[3]));
+            return LogDebugJson("GetDeviceInfoAsync response", new GetDeviceInfoResponse(data[0], data[1], data[2], data[3]));
         }
 
         public async Task<GetDisplayModeResponse> GetDisplayModeAsync() {
+            _logger?.LogDebug("GetDisplayModeAsync request");
             var response = await QueryAsync("ZQI24").ConfigureAwait(false);
-            return ParseDisplayModeResponse(response);
+            return LogDebugJson("GetDisplayModeAsync response", ParseDisplayModeResponse(response));
         }
 
         public async Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
+
+            // TODO: add request/response logging
             => SanitizeText(await QueryAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}").ConfigureAwait(false), maxLength: 10);
 
         public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value)
+
+            // TODO: add request/response logging
             => SendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r");
 
         public async Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
+
+            // TODO: add request/response logging
             => SanitizeText(await QueryAsync($"ZQS11{ToCommandCode(customMode)}").ConfigureAwait(false), maxLength: 7);
 
         public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value)
+
+            // TODO: add request/response logging
             => SendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r");
 
         public async Task<string> GetCmsLabelAsync(RadianceProCms cms)
+
+            // TODO: add request/response logging
             => SanitizeText(await QueryAsync($"ZQS12{ToCommandCode(cms)}").ConfigureAwait(false), maxLength: 8);
 
         public Task SetCmsLabelAsync(RadianceProCms cms, string value)
+
+            // TODO: add request/response logging
             => SendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r");
 
         public async Task<string> GetStyleLabelAsync(RadianceProStyle style)
+
+            // TODO: add request/response logging
             => SanitizeText(await QueryAsync($"ZQS13{ToCommandCode(style)}").ConfigureAwait(false), maxLength: 8);
 
         public Task SetStyleLabelAsync(RadianceProStyle style, string value)
+
+            // TODO: add request/response logging
             => SendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r");
 
         public Task SelectMemoryAsync(RadianceProMemory memory) {
+
+            // TODO: add request/response logging
             switch(memory) {
             case RadianceProMemory.MemoryA:
                 return SendAsync("a");
@@ -205,6 +234,8 @@ namespace RadiantPi.Lumagen {
         }
 
         public Task ShowMessageAsync(string message, int seconds) {
+
+            // TODO: add request/response logging
             if(message is null) {
                 throw new ArgumentNullException(nameof(message));
             }
@@ -220,10 +251,19 @@ namespace RadiantPi.Lumagen {
             return SendAsync($"ZT{seconds}{message}\r");
         }
 
-        public Task ClearMessageAsync() => SendAsync($"ZC");
+        public Task ClearMessageAsync()
 
-        public Task SendAsync(string command) => SendOrQueryAsync(command, expectResponse: false);
+            // TODO: add request/response logging
+            => SendAsync($"ZC");
+
+        public Task SendAsync(string command)
+
+            // TODO: add request/response logging
+            => SendOrQueryAsync(command, expectResponse: false);
+
         public async Task<string> QueryAsync(string command)
+
+            // TODO: add request/response logging
             => (await SendOrQueryAsync(command, expectResponse: true)) ?? throw new InvalidOperationException("query returned null");
 
         public void Dispose() {
@@ -231,10 +271,12 @@ namespace RadiantPi.Lumagen {
             _disposed = true;
             _mutex.Dispose();
             if(_serialPort.IsOpen) {
-                _logger?.LogInformation("closing serial port");
+                _logger?.LogInformation("Closing serial port");
                 _serialPort.DiscardInBuffer();
                 _serialPort.DiscardOutBuffer();
                 _serialPort.Close();
+            } else {
+                _logger?.LogDebug("Serial port is already closed");
             }
             _serialPort.Dispose();
         }
@@ -244,7 +286,7 @@ namespace RadiantPi.Lumagen {
             var buffer = Encoding.UTF8.GetBytes(command);
             await _mutex.WaitAsync().ConfigureAwait(false);
             try {
-                _logger?.LogInformation($"sending: '{Escape(command)}'");
+                _logger?.LogTrace($"Sending command: '{Escape(command)}'");
 
                 // send message, await echo response and optional response message
                 if(expectResponse) {
@@ -282,7 +324,7 @@ namespace RadiantPi.Lumagen {
 
         private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
             var received = _serialPort.ReadExisting();
-            _logger?.LogTrace($"received: '{Escape(received)}'");
+            _logger?.LogTrace($"Received data: '{Escape(received)}'");
 
             // loop while there is text to process
             while(received.Length > 0) {
@@ -312,7 +354,7 @@ namespace RadiantPi.Lumagen {
 
                     // process response
                     var message = _accumulator.Substring(0, index);
-                    _logger?.LogTrace($"data dispatched: '{Escape(message)}'");
+                    _logger?.LogTrace($"Dispatching received response: '{Escape(message)}'");
                     _responseReceivedEvent?.Invoke(this, message);
 
                     // process remainder of accumulator as newly received text
@@ -325,26 +367,26 @@ namespace RadiantPi.Lumagen {
         private void DispatchEvent(object? sender, string response) {
             var prefix = response.Substring(0, 4);
             if(prefix.StartsWith("!", StringComparison.Ordinal)) {
-                _logger?.LogInformation($"dispatching event: {Escape(prefix)}");
 
                 // parse mode information event
-                const string MODE_INFO_RESPONSE_V1 = "!I21";
-                const string MODE_INFO_RESPONSE_V2 = "!I22";
-                const string MODE_INFO_RESPONSE_V3 = "!I23";
-                const string MODE_INFO_RESPONSE_V4 = "!I24";
+                const string DISPLAY_MODE_RESPONSE_V1 = "!I21";
+                const string DISPLAY_MODE_RESPONSE_V2 = "!I22";
+                const string DISPLAY_MODE_RESPONSE_V3 = "!I23";
+                const string DISPLAY_MODE_RESPONSE_V4 = "!I24";
                 if(
-                    prefix.Equals(MODE_INFO_RESPONSE_V1, StringComparison.Ordinal)
-                    || prefix.Equals(MODE_INFO_RESPONSE_V2, StringComparison.Ordinal)
-                    || prefix.Equals(MODE_INFO_RESPONSE_V3, StringComparison.Ordinal)
-                    || prefix.Equals(MODE_INFO_RESPONSE_V4, StringComparison.Ordinal)
+                    prefix.Equals(DISPLAY_MODE_RESPONSE_V1, StringComparison.Ordinal)
+                    || prefix.Equals(DISPLAY_MODE_RESPONSE_V2, StringComparison.Ordinal)
+                    || prefix.Equals(DISPLAY_MODE_RESPONSE_V3, StringComparison.Ordinal)
+                    || prefix.Equals(DISPLAY_MODE_RESPONSE_V4, StringComparison.Ordinal)
                 ) {
-                    var displayModeResponse = ParseDisplayModeResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length + 1));
+                    var displayModeResponse = ParseDisplayModeResponse(response.Substring(DISPLAY_MODE_RESPONSE_V1.Length + 1));
                     if(displayModeResponse is not null) {
-                        _logger?.LogInformation("matched event: DisplayModeChanged");
+                        _logger?.LogInformation("Triggering DisplayModeChanged event");
+                        LogDebugJson("DisplayModeChanged event", displayModeResponse);
                         DisplayModeChanged?.Invoke(this, new(displayModeResponse));
                     }
                 } else {
-                    _logger?.LogWarning($"unrecognized event: '{Escape(prefix)}'");
+                    _logger?.LogWarning($"Unrecognized event: '{Escape(prefix)}'");
                 }
             }
         }
@@ -459,18 +501,13 @@ namespace RadiantPi.Lumagen {
                 info.OutputVerticalResolution = data[13];
                 info.OutputAspectRatio = data[14];
             }
-            return LogResponse(info);
+            return info;
         }
 
-        private T LogResponse<T>(T response) {
+        private T LogDebugJson<T>(string message, T response) {
             if(_logger?.IsEnabled(LogLevel.Debug) ?? false) {
-                var serializedResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions {
-                    WriteIndented = true,
-                    Converters = {
-                        new JsonStringEnumConverter()
-                    }
-                });
-                _logger?.LogDebug($"response: {serializedResponse}");
+                var serializedResponse = JsonSerializer.Serialize(response, g_jsonSerializerOptions);
+                _logger?.LogDebug($"{message}: {serializedResponse}");
             }
             return response;
         }
