@@ -1,4 +1,5 @@
-﻿using RadiantPi.Lumagen;
+﻿using System;
+using RadiantPi.Lumagen;
 
 // initialize client
 using var client = new RadianceProClient(new RadianceProClientConfig {
@@ -7,4 +8,5 @@ using var client = new RadianceProClient(new RadianceProClientConfig {
 });
 
 // show message
-await client.ShowMessageAsync("Hellow world!!!", 5);
+Console.WriteLine("Show 'Hellow World!!!");
+await client.ShowMessageAsync("Hellow World!!!", 5);
