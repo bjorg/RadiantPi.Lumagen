@@ -37,14 +37,21 @@ When setting blend value, only last B digit is used so range is 000001-00000f wh
 
 </dd>
 
+## Logging
 
+Always capitalize messages.
 
-
-
-
-
-
-
-
-
-
+* Use Trace for
+    * protocol communication
+* Use Debug for
+    * actions NOT taken
+    * additional details not included in LogInformation
+    * serialized data structures
+* Use Info for
+    * action taken
+* Use Warn for
+    * incomplete information and recoverable, unexpected situations
+* Use Error for
+    * unexpected situations that cause an operation to fail
+* Use Critical for
+    * unexpected situations that cause the application to exit
