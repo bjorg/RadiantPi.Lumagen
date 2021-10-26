@@ -10,6 +10,10 @@
     * `ModeInfoChangedEventArgs` --> `DisplayModeChangedEventArgs`
     * `RadianceProModeInfo` --> `RadianceProDisplayMode`
 
+### Features
+
+* All commands and queries are now logged at the _Debug_ logging level.
+
 ### Fixes
 
 * Consistent application of logging levels
