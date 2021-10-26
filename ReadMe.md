@@ -28,24 +28,24 @@ await client.ShowMessageAsync("   Hello World!!!   ", 5);
 
 ## Sample: Listen for events
 
-Use `ModeInfoChanged` to listen to events, such as input or content changes.
+Use `DisplayModeChanged` to listen to events, such as input or content changes.
 
 ```csharp
 // hook-up event handler
-client.ModeInfoChanged += ShowModeInfo;
+client.DisplayModeChanged += ShowDisplayMode;
 
 // wait until the enter key is pressed
 Console.WriteLine("Listening for events. Press ENTER to exit.");
 Console.ReadLine();
 
 // remove event handler
-client.ModeInfoChanged -= ShowModeInfo;
+client.DisplayModeChanged -= ShowDisplayMode;
 
 // function acting on events
-void ShowModeInfo(object? sender, ModeInfoChangedEventArgs args) {
+void ShowDisplayMode(object? sender, DisplayModeChangedEventArgs args) {
     Console.WriteLine("=== MODE INFO ===");
     Console.WriteLine();
-    Console.WriteLine(JsonSerializer.Serialize(args.ModeInfo, new JsonSerializerOptions {
+    Console.WriteLine(JsonSerializer.Serialize(args.DisplayMode, new JsonSerializerOptions {
         WriteIndented = true
     }));
 }

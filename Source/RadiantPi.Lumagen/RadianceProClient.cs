@@ -118,7 +118,7 @@ namespace RadiantPi.Lumagen {
         private static string SanitizeText(string value, int maxLength) => new string(value.Take(maxLength).Select(c => (char.IsLetterOrDigit(c) ? c : ' ')).ToArray());
 
         //--- Fields ---
-        public event EventHandler<ModeInfoChangedEventArgs>? ModeInfoChanged;
+        public event EventHandler<DisplayModeChangedEventArgs>? DisplayModeChanged;
         private readonly SerialPort _serialPort;
         private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
         private string _accumulator = "";
@@ -160,9 +160,9 @@ namespace RadiantPi.Lumagen {
             return LogResponse(new GetDeviceInfoResponse(data[0], data[1], data[2], data[3]));
         }
 
-        public async Task<GetModeInfoResponse> GetModeInfoAsync() {
+        public async Task<GetDisplayModeResponse> GetDisplayModeAsync() {
             var response = await QueryAsync("ZQI24").ConfigureAwait(false);
-            return ParseModeInfoResponse(response);
+            return ParseDisplayModeResponse(response);
         }
 
         public async Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
@@ -338,10 +338,10 @@ namespace RadiantPi.Lumagen {
                     || prefix.Equals(MODE_INFO_RESPONSE_V3, StringComparison.Ordinal)
                     || prefix.Equals(MODE_INFO_RESPONSE_V4, StringComparison.Ordinal)
                 ) {
-                    var modeInfoResponse = ParseModeInfoResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length + 1));
-                    if(modeInfoResponse is not null) {
-                        _logger?.LogInformation("matched event: ModeInfoChanged");
-                        ModeInfoChanged?.Invoke(this, new(modeInfoResponse));
+                    var displayModeResponse = ParseDisplayModeResponse(response.Substring(MODE_INFO_RESPONSE_V1.Length + 1));
+                    if(displayModeResponse is not null) {
+                        _logger?.LogInformation("matched event: DisplayModeChanged");
+                        DisplayModeChanged?.Invoke(this, new(displayModeResponse));
                     }
                 } else {
                     _logger?.LogWarning($"unrecognized event: '{Escape(prefix)}'");
@@ -349,9 +349,9 @@ namespace RadiantPi.Lumagen {
             }
         }
 
-        private GetModeInfoResponse ParseModeInfoResponse(string response) {
+        private GetDisplayModeResponse ParseDisplayModeResponse(string response) {
             var data = response.Split(",");
-            GetModeInfoResponse info = new();
+            GetDisplayModeResponse info = new();
 
             // parse fields based on column count in the respons
             if(data.Length >= 23) {

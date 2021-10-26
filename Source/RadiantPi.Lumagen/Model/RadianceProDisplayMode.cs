@@ -21,7 +21,7 @@
 
 namespace RadiantPi.Lumagen.Model {
 
-    public class RadianceProModeInfo {
+    public class RadianceProDisplayMode {
 
         // Radiance Pro only(release 041120 and later).
         // Full information query('Fullv4' for unsolicited status output):

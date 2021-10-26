@@ -28,7 +28,7 @@ jobs:
     - name: Build HelloWorld Sample
       run: dotnet build Samples/HelloWorld/HelloWorld.csproj
     - name: Build Show Mode Info Sample
-      run: dotnet build Samples/ShowModeInfo/ShowModeInfo.csproj
+      run: dotnet build Samples/ShowDisplayMode/ShowDisplayMode.csproj
 
 #    - name: Test
 #      run: dotnet test --no-build --verbosity normal Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
