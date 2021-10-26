@@ -34,8 +34,8 @@ jobs:
 #      run: dotnet test --no-build --verbosity normal Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
 
     # Publish RadiantPi.Lumagen
-   - name: Publish
-     uses: brandedoutcast/publish-nuget@v2.5.2
-     with:
-         PROJECT_FILE_PATH: Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
-         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+    - name: Publish
+      uses: brandedoutcast/publish-nuget@v2.5.2
+      with:
+          PROJECT_FILE_PATH: Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
+          NUGET_KEY: ${{secrets.NUGET_API_KEY}}
