@@ -1,5 +1,11 @@
 # TO DO
 
+## Nuget
+
+* Add ReadMe section: https://devblogs.microsoft.com/nuget/add-a-readme-to-your-nuget-package/
+* Add logo
+
+
 ## Commands to Add
 
 <dl>
@@ -36,6 +42,7 @@ RRGGBB for foreground, background id RGB color were RR, GG, or BB is hexadecimal
 When setting blend value, only last B digit is used so range is 000001-00000f where 'f'isopaque messages and '1'is near transparent.
 
 </dd>
+
 
 ## Logging
 
