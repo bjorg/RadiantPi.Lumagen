@@ -22,20 +22,20 @@ using RadiantPi.Lumagen.Model;
 
 namespace RadiantPi.Lumagen {
 
-    public class ModeInfoChangedEventArgs : EventArgs {
+    public class DisplayModeChangedEventArgs : EventArgs {
 
         //--- Constructors ---
-        public ModeInfoChangedEventArgs(RadianceProModeInfo modeInfo)
-            => ModeInfo = modeInfo ?? throw new ArgumentNullException(nameof(modeInfo));
+        public DisplayModeChangedEventArgs(RadianceProDisplayMode displayMode)
+            => DisplayMode = displayMode ?? throw new ArgumentNullException(nameof(displayMode));
 
         //--- Properties ---
-        public RadianceProModeInfo ModeInfo { get; }
+        public RadianceProDisplayMode DisplayMode { get; }
     }
 
     public interface IRadiancePro : IDisposable {
 
         //--- Events ---
-        event EventHandler<ModeInfoChangedEventArgs> ModeInfoChanged;
+        event EventHandler<DisplayModeChangedEventArgs> DisplayModeChanged;
 
         //--- Methods ---
 
@@ -49,7 +49,7 @@ namespace RadiantPi.Lumagen {
         /// Get information about the current display mode, such as resolution, aspect ratio, etc.
         /// </summary>
         /// <returns>Display mode information</returns>
-        Task<GetModeInfoResponse> GetModeInfoAsync();
+        Task<GetDisplayModeResponse> GetDisplayModeAsync();
 
         /// <summary>
         /// Select a memory to be active.

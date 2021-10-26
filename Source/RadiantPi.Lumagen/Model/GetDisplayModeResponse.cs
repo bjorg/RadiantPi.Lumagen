@@ -20,5 +20,5 @@ using System;
 
 namespace RadiantPi.Lumagen.Model {
 
-    public sealed class GetModeInfoResponse : RadianceProModeInfo { }
+    public sealed class GetDisplayModeResponse : RadianceProDisplayMode { }
 }
