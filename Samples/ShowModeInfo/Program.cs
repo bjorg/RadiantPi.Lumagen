@@ -21,8 +21,8 @@ client.ModeInfoChanged -= ShowModeInfo;
 // function acting on events
 void ShowModeInfo(object? sender, ModeInfoChangedEventArgs args) {
     Console.WriteLine("=== MODE INFO ===");
+    Console.WriteLine();
     Console.WriteLine(JsonSerializer.Serialize(args.ModeInfo, new JsonSerializerOptions {
         WriteIndented = true
     }));
-    Console.WriteLine();
 }
