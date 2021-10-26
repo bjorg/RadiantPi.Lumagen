@@ -8,5 +8,5 @@ using var client = new RadianceProClient(new RadianceProClientConfig {
 });
 
 // show message
-Console.WriteLine("Hellow World!!!");
-await client.ShowMessageAsync("Hellow World!!!", 5);
+Console.WriteLine("Hello World!!!");
+await client.ShowMessageAsync("   Hello World!!!   ", 5);
