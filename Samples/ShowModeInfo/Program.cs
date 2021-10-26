@@ -8,16 +8,17 @@ using var client = new RadianceProClient(new RadianceProClientConfig {
     BaudRate = 9600
 });
 
-// hook-up event handler showing the mode info events
+// hook-up event handler
 client.ModeInfoChanged += ShowModeInfo;
 
-// wait until the enter is pressed
+// wait until the enter key is pressed
+Console.WriteLine("Listening for events. Press ENTER to exit.");
 Console.ReadLine();
 
-// remove event handler again befor exiting
+// remove event handler
 client.ModeInfoChanged -= ShowModeInfo;
 
-// function acting on mode info changed events
+// function acting on events
 void ShowModeInfo(object? sender, ModeInfoChangedEventArgs args) {
     Console.WriteLine("=== MODE INFO ===");
     Console.WriteLine(JsonSerializer.Serialize(args.ModeInfo, new JsonSerializerOptions {
