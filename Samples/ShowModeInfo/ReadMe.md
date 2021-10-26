@@ -5,6 +5,7 @@ List for mode changes and show the results.
 Requires the Lumagen RadiancePro to have report mode changes set to Fullv4:
 * MENU → Other → I/O Setup → RS-232 Setup → Report mode changes → Fullv4
 
+## Code
 ```csharp
 using System;
 using System.Text.Json;
@@ -36,6 +37,7 @@ void ShowModeInfo(object? sender, ModeInfoChangedEventArgs args) {
 }
 ```
 
+## Output
 ```
 Listening for events. Press ENTER to exit.
 === MODE INFO ===
