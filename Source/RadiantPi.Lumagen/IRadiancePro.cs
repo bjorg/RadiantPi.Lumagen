@@ -35,6 +35,10 @@ namespace RadiantPi.Lumagen {
     public interface IRadiancePro : IDisposable {
 
         //--- Events ---
+
+        /// <summary>
+        /// Event triggered when the display mode changes.
+        /// </summary>
         event EventHandler<DisplayModeChangedEventArgs> DisplayModeChanged;
 
         //--- Methods ---
