@@ -6,6 +6,7 @@ Requires the Lumagen RadiancePro to have Echo enabled:
 * MENU → Other → I/O Setup → RS-232 Setup → Echo → On
 
 ## Code
+
 ```csharp
 using System;
 using RadiantPi.Lumagen;

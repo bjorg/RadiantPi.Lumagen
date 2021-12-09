@@ -6,6 +6,7 @@ Requires the Lumagen RadiancePro to have report mode changes set to Fullv4:
 * MENU → Other → I/O Setup → RS-232 Setup → Report mode changes → Fullv4
 
 ## Code
+
 ```csharp
 using System;
 using System.Text.Json;
