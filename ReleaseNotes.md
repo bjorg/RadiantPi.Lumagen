@@ -1,6 +1,15 @@
 # Release Notes
 
+## v1.2 (TBD)
+
+
+
 ## v1.1 (2021-10-26)
+
+### Features
+
+* Added `ShowMessageCenteredAsync()` extension method to display text centered in message bubble.
+
 
 ### BREAKING CHANGES
 
