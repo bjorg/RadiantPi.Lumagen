@@ -16,499 +16,497 @@
  * with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
 using System.Globalization;
 using System.IO;
 using System.IO.Ports;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RadiantPi.Lumagen.Model;
 
-namespace RadiantPi.Lumagen {
+namespace RadiantPi.Lumagen;
 
-    public sealed class RadianceProClientConfig {
+public sealed class RadianceProClientConfig {
 
-        //--- Properties ---
-        public string? PortName { get; set; }
-        public int? BaudRate { get; set; }
-    }
+    //--- Properties ---
+    public string? PortName { get; set; }
+    public int? BaudRate { get; set; }
+}
 
-    public sealed class RadianceProClient : IRadiancePro {
+public sealed class RadianceProClient : IRadiancePro {
 
-        //--- Class Fields ---
-        private static readonly JsonSerializerOptions g_jsonSerializerOptions = new() {
-            WriteIndented = true,
-            Converters = {
-                new JsonStringEnumConverter()
-            }
+    //--- Class Fields ---
+    private static readonly JsonSerializerOptions g_jsonSerializerOptions = new() {
+        WriteIndented = true,
+        Converters = {
+            new JsonStringEnumConverter()
+        }
+    };
+
+    //--- Class Methods ---
+    private static string ToCommandCode(RadianceProMemory memory, bool allowAll)
+        => memory switch {
+            RadianceProMemory.MemoryAll => allowAll
+                ? "0"
+                : throw new ArgumentException("all memory is not allowed"),
+            RadianceProMemory.MemoryA => "A",
+            RadianceProMemory.MemoryB => "B",
+            RadianceProMemory.MemoryC => "C",
+            RadianceProMemory.MemoryD => "D",
+            _ => throw new ArgumentException("invalid memory selection")
         };
 
-        //--- Class Methods ---
-        private static string ToCommandCode(RadianceProMemory memory, bool allowAll)
-            => memory switch {
-                RadianceProMemory.MemoryAll => allowAll
-                    ? "0"
-                    : throw new ArgumentException("all memory is not allowed"),
-                RadianceProMemory.MemoryA => "A",
-                RadianceProMemory.MemoryB => "B",
-                RadianceProMemory.MemoryC => "C",
-                RadianceProMemory.MemoryD => "D",
-               _ => throw new ArgumentException("invalid memory selection")
-            };
+    private static string ToCommandCode(RadianceProInput input)
+        => input switch {
+            RadianceProInput.Input1 => "0",
+            RadianceProInput.Input2 => "1",
+            RadianceProInput.Input3 => "2",
+            RadianceProInput.Input4 => "3",
+            RadianceProInput.Input5 => "4",
+            RadianceProInput.Input6 => "5",
+            RadianceProInput.Input7 => "6",
+            RadianceProInput.Input8 => "7",
+            RadianceProInput.Input9 => "8",
+            RadianceProInput.Input10 => "9",
+            _ => throw new ArgumentException("invalid input selection")
+        };
 
-        private static string ToCommandCode(RadianceProInput input)
-            => input switch {
-                RadianceProInput.Input1 => "0",
-                RadianceProInput.Input2 => "1",
-                RadianceProInput.Input3 => "2",
-                RadianceProInput.Input4 => "3",
-                RadianceProInput.Input5 => "4",
-                RadianceProInput.Input6 => "5",
-                RadianceProInput.Input7 => "6",
-                RadianceProInput.Input8 => "7",
-                RadianceProInput.Input9 => "8",
-                RadianceProInput.Input10 => "9",
-               _ => throw new ArgumentException("invalid input selection")
-            };
+    private static string ToCommandCode(RadianceProCustomMode customMode)
+        => customMode switch {
+            RadianceProCustomMode.CustomMode0 => "0",
+            RadianceProCustomMode.CustomMode1 => "1",
+            RadianceProCustomMode.CustomMode2 => "2",
+            RadianceProCustomMode.CustomMode3 => "3",
+            RadianceProCustomMode.CustomMode4 => "4",
+            RadianceProCustomMode.CustomMode5 => "5",
+            RadianceProCustomMode.CustomMode6 => "6",
+            RadianceProCustomMode.CustomMode7 => "7",
+            _ => throw new ArgumentException("invalid custom mode selection")
+        };
 
-        private static string ToCommandCode(RadianceProCustomMode customMode)
-            => customMode switch {
-                RadianceProCustomMode.CustomMode0 => "0",
-                RadianceProCustomMode.CustomMode1 => "1",
-                RadianceProCustomMode.CustomMode2 => "2",
-                RadianceProCustomMode.CustomMode3 => "3",
-                RadianceProCustomMode.CustomMode4 => "4",
-                RadianceProCustomMode.CustomMode5 => "5",
-                RadianceProCustomMode.CustomMode6 => "6",
-                RadianceProCustomMode.CustomMode7 => "7",
-                _ => throw new ArgumentException("invalid custom mode selection")
-            };
+    private static string ToCommandCode(RadianceProCms cms)
+        => cms switch {
+            RadianceProCms.Cms0 => "0",
+            RadianceProCms.Cms1 => "1",
+            RadianceProCms.Cms2 => "2",
+            RadianceProCms.Cms3 => "3",
+            RadianceProCms.Cms4 => "4",
+            RadianceProCms.Cms5 => "5",
+            RadianceProCms.Cms6 => "6",
+            RadianceProCms.Cms7 => "7",
+            _ => throw new ArgumentException("invalid cms selection")
+        };
 
-        private static string ToCommandCode(RadianceProCms cms)
-            => cms switch {
-                RadianceProCms.Cms0 => "0",
-                RadianceProCms.Cms1 => "1",
-                RadianceProCms.Cms2 => "2",
-                RadianceProCms.Cms3 => "3",
-                RadianceProCms.Cms4 => "4",
-                RadianceProCms.Cms5 => "5",
-                RadianceProCms.Cms6 => "6",
-                RadianceProCms.Cms7 => "7",
-               _ => throw new ArgumentException("invalid cms selection")
-            };
+    private static string ToCommandCode(RadianceProStyle style)
+        => style switch {
+            RadianceProStyle.Style0 => "0",
+            RadianceProStyle.Style1 => "1",
+            RadianceProStyle.Style2 => "2",
+            RadianceProStyle.Style3 => "3",
+            RadianceProStyle.Style4 => "4",
+            RadianceProStyle.Style5 => "5",
+            RadianceProStyle.Style6 => "6",
+            RadianceProStyle.Style7 => "7",
+            _ => throw new ArgumentException("invalid style selection")
+        };
 
-        private static string ToCommandCode(RadianceProStyle style)
-            => style switch {
-                RadianceProStyle.Style0 => "0",
-                RadianceProStyle.Style1 => "1",
-                RadianceProStyle.Style2 => "2",
-                RadianceProStyle.Style3 => "3",
-                RadianceProStyle.Style4 => "4",
-                RadianceProStyle.Style5 => "5",
-                RadianceProStyle.Style6 => "6",
-                RadianceProStyle.Style7 => "7",
-               _ => throw new ArgumentException("invalid style selection")
-            };
+    private static string Escape(string text)
+        => string.Join("", text.Select(c => c switch {
+            >= (char)32 and < (char)127 => ((char)c).ToString(),
+            '\n' => "\\n",
+            '\r' => "\\r",
+            _ => $"\\u{(int)c:X4}"
+        }));
 
-        private static string Escape(string text)
-            => string.Join("", text.Select(c => c switch {
-                >= (char)32 and < (char)127 => ((char)c).ToString(),
-                '\n' => "\\n",
-                '\r' => "\\r",
-                _ => $"\\u{(int)c:X4}"
-            }));
+    private static string SanitizeText(string value, int maxLength) => new string(value.Take(maxLength).Select(c => (char.IsLetterOrDigit(c) ? c : ' ')).ToArray());
 
-        private static string SanitizeText(string value, int maxLength) => new string(value.Take(maxLength).Select(c => (char.IsLetterOrDigit(c) ? c : ' ')).ToArray());
+    //--- Fields ---
+    public event EventHandler<DisplayModeChangedEventArgs>? DisplayModeChanged;
+    private readonly SerialPort _serialPort;
+    private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
+    private readonly ILogger? _logger;
+    private string _accumulator = "";
+    private event EventHandler<string> _responseReceivedEvent;
+    private bool _disposed;
 
-        //--- Fields ---
-        public event EventHandler<DisplayModeChangedEventArgs>? DisplayModeChanged;
-        private readonly SerialPort _serialPort;
-        private readonly SemaphoreSlim _mutex = new SemaphoreSlim(1, 1);
-        private string _accumulator = "";
-        private event EventHandler<string> _responseReceivedEvent;
-        private ILogger? _logger;
-        private bool _disposed;
+    //--- Constructors ---
+    public RadianceProClient(RadianceProClientConfig config, ILogger<RadianceProClient>? logger = null)
+        : this(config.PortName ?? throw new ArgumentNullException("missing port name"), config.BaudRate ?? 9600, logger) { }
 
-        //--- Constructors ---
-        public RadianceProClient(RadianceProClientConfig config, ILogger<RadianceProClient>? logger = null)
-            : this(config.PortName ?? throw new ArgumentNullException("missing port name"), config.BaudRate ?? 9600, logger) { }
+    public RadianceProClient(SerialPort serialPort, ILogger<RadianceProClient>? logger = null) {
+        _logger = logger;
+        _responseReceivedEvent += DispatchEvent;
+        _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
+        _serialPort.DataReceived += SerialDataReceived;
+        _serialPort.Open();
+        _logger?.LogInformation("Serial port is open");
+    }
 
-        public RadianceProClient(SerialPort serialPort, ILogger<RadianceProClient>? logger = null) {
-            _logger = logger;
-            _responseReceivedEvent += DispatchEvent;
-            _serialPort = serialPort ?? throw new ArgumentNullException(nameof(serialPort));
-            _serialPort.DataReceived += SerialDataReceived;
-            _serialPort.Open();
-            _logger?.LogInformation("Serial port is open");
-        }
+    public RadianceProClient(string portName, int baudRate = 9600, ILogger<RadianceProClient>? logger = null) : this(new SerialPort {
+        PortName = portName ?? throw new ArgumentNullException(nameof(portName)),
+        BaudRate = baudRate,
+        DataBits = 8,
+        Parity = Parity.None,
+        StopBits = StopBits.One,
+        Handshake = Handshake.None,
+        ReadTimeout = 1_000,
+        WriteTimeout = 1_000
+    }, logger) { }
 
-        public RadianceProClient(string portName, int baudRate = 9600, ILogger<RadianceProClient>? logger = null) : this(new SerialPort {
-            PortName = portName ?? throw new ArgumentNullException(nameof(portName)),
-            BaudRate = baudRate,
-            DataBits = 8,
-            Parity = Parity.None,
-            StopBits = StopBits.One,
-            Handshake = Handshake.None,
-            ReadTimeout = 1_000,
-            WriteTimeout = 1_000
-        }, logger) { }
-
-        //--- Methods ---
-        public Task<GetDeviceInfoResponse> GetDeviceInfoAsync()
-            => LogRequestResponse(async () => {
-                var response = await InternalQueryAsync("ZQS01").ConfigureAwait(false);
-                var data = response.Split(",");
-                if(data.Length < 4) {
-                    throw new InvalidDataException("invalid response");
-                }
-                return new GetDeviceInfoResponse(data[0], data[1], data[2], data[3]);
-            });
-
-        public Task<GetDisplayModeResponse> GetDisplayModeAsync()
-            => LogRequestResponse(async () => {
-                var response = await InternalQueryAsync("ZQI24").ConfigureAwait(false);
-                return ParseDisplayModeResponse(response);
-            });
-
-        public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
-            => LogRequestResponse(async () => SanitizeText(await InternalQueryAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}").ConfigureAwait(false), maxLength: 10));
-
-        public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value)
-            => LogRequest(() => InternalSendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r"));
-
-        public Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
-            => LogRequestResponse(async () => SanitizeText(await InternalQueryAsync($"ZQS11{ToCommandCode(customMode)}").ConfigureAwait(false), maxLength: 7));
-
-        public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value)
-            => LogRequest(() => InternalSendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r"));
-
-        public Task<string> GetCmsLabelAsync(RadianceProCms cms)
-            => LogRequestResponse(async () => SanitizeText(await InternalQueryAsync($"ZQS12{ToCommandCode(cms)}").ConfigureAwait(false), maxLength: 8));
-
-        public Task SetCmsLabelAsync(RadianceProCms cms, string value)
-            => LogRequest(() => InternalSendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r"));
-
-        public Task<string> GetStyleLabelAsync(RadianceProStyle style)
-            => LogRequestResponse(async () => SanitizeText(await InternalQueryAsync($"ZQS13{ToCommandCode(style)}").ConfigureAwait(false), maxLength: 8));
-
-        public Task SetStyleLabelAsync(RadianceProStyle style, string value)
-            => LogRequest(() => InternalSendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r"));
-
-        public Task SelectMemoryAsync(RadianceProMemory memory)
-            => LogRequest(() => {
-                switch(memory) {
-                case RadianceProMemory.MemoryA:
-                    return InternalSendAsync("a");
-                case RadianceProMemory.MemoryB:
-                    return InternalSendAsync("b");
-                case RadianceProMemory.MemoryC:
-                    return InternalSendAsync("c");
-                case RadianceProMemory.MemoryD:
-                    return InternalSendAsync("d");
-                default:
-                    throw new ArgumentException("invalid memory selection");
-                };
-            });
-
-        public Task ShowMessageAsync(string message, int seconds)
-            => LogRequest(() => {
-                if(message is null) {
-                    throw new ArgumentNullException(nameof(message));
-                }
-                if(message.Any(c => (c < 0x20) || (c > 0x7A))) {
-                    throw new ArgumentOutOfRangeException(nameof(message), "characters must be >= ' ' (0x20) and <= 'z' (0x7A)");
-                }
-                if(message.Length > 60) {
-                    throw new ArgumentOutOfRangeException(nameof(message), "string length must be <= 60 characters");
-                }
-                if((seconds < 0) || (seconds > 9)) {
-                    throw new ArgumentOutOfRangeException(nameof(seconds), "value must be >= 0 and <= 9");
-                }
-                return InternalSendAsync($"ZT{seconds}{message}\r");
-            });
-
-        public Task ClearMessageAsync()
-            => LogRequest(() => InternalSendAsync($"ZC"));
-
-        public Task SendAsync(string command)
-            => LogRequest(() => InternalSendAsync(command));
-
-        public Task<string> QueryAsync(string command)
-            => LogRequestResponse(async () => (await InternalQueryAsync(command)) ?? throw new InvalidOperationException("query returned null"));
-
-        public void Dispose() {
-            _serialPort.DataReceived -= SerialDataReceived;
-            _disposed = true;
-            _mutex.Dispose();
-            if(_serialPort.IsOpen) {
-                _logger?.LogInformation("Closing serial port");
-                _serialPort.DiscardInBuffer();
-                _serialPort.DiscardOutBuffer();
-                _serialPort.Close();
-            } else {
-                _logger?.LogDebug("Serial port is already closed");
-            }
-            _serialPort.Dispose();
-        }
-
-        private Task InternalSendAsync(string command)
-            => SendOrQueryAsync(command, expectResponse: false);
-
-        private async Task<string> InternalQueryAsync(string command)
-            => (await SendOrQueryAsync(command, expectResponse: true)) ?? throw new InvalidOperationException("query returned null");
-
-        private async Task<string?> SendOrQueryAsync(string command, bool expectResponse) {
-            CheckNotDisposed();
-            var buffer = Encoding.UTF8.GetBytes(command);
-            await _mutex.WaitAsync().ConfigureAwait(false);
-            try {
-                _logger?.LogTrace($"Sending command: '{Escape(command)}'");
-
-                // send message, await echo response and optional response message
-                if(expectResponse) {
-                    TaskCompletionSource<string> responseSource = new();
-                    try {
-                        _responseReceivedEvent += ReadResponse;
-                        await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                        return await responseSource.Task.ConfigureAwait(false);
-                    } finally {
-                        _responseReceivedEvent -= ReadResponse;
-                    }
-
-                    // local functions
-                    void ReadResponse(object? sender, string response) {
-
-                        // skip everything until the first comma (',')
-                        for(var i = 0; i < response.Length; ++i) {
-                            if(response[i] == ',') {
-                                response = response.Remove(0, i + 1);
-                                break;
-                            }
-                        }
-
-                        // terminator characters were received; indicate we're done by setting response
-                        responseSource.SetResult(response);
-                    }
-                } else {
-                    await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                    return null;
-                }
-            } finally {
-                _mutex.Release();
-            }
-        }
-
-        private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
-            var received = _serialPort.ReadExisting();
-            _logger?.LogTrace($"Received data: '{Escape(received)}'");
-
-            // loop while there is text to process
-            while(received.Length > 0) {
-                if(_accumulator.Length == 0) {
-
-                    // check if received text contains a response marker
-                    var index = received.IndexOf('!');
-                    if(index < 0) {
-                        return;
-                    }
-
-                    // found beginning of a response
-                    _accumulator = "!";
-
-                    // continue by processing remainder of received text
-                    received = received.Substring(index + 1);
-                } else {
-
-                    // append received text
-                    _accumulator += received;
-
-                    // check if we found an end-of-response marker
-                    var index = _accumulator.IndexOf("\r\n");
-                    if(index < 0) {
-                        return;
-                    }
-
-                    // process response
-                    var message = _accumulator.Substring(0, index);
-                    _logger?.LogTrace($"Dispatching received response: '{Escape(message)}'");
-                    _responseReceivedEvent?.Invoke(this, message);
-
-                    // process remainder of accumulator as newly received text
-                    received = _accumulator.Substring(index);
-                    _accumulator = "";
-                }
-            }
-        }
-
-        private void DispatchEvent(object? sender, string response) {
-            var prefix = response.Substring(0, 4);
-            if(prefix.StartsWith("!", StringComparison.Ordinal)) {
-
-                // parse display mode information event
-                const string DISPLAY_MODE_RESPONSE_V1 = "!I21";
-                const string DISPLAY_MODE_RESPONSE_V2 = "!I22";
-                const string DISPLAY_MODE_RESPONSE_V3 = "!I23";
-                const string DISPLAY_MODE_RESPONSE_V4 = "!I24";
-                if(
-                    prefix.Equals(DISPLAY_MODE_RESPONSE_V1, StringComparison.Ordinal)
-                    || prefix.Equals(DISPLAY_MODE_RESPONSE_V2, StringComparison.Ordinal)
-                    || prefix.Equals(DISPLAY_MODE_RESPONSE_V3, StringComparison.Ordinal)
-                    || prefix.Equals(DISPLAY_MODE_RESPONSE_V4, StringComparison.Ordinal)
-                ) {
-                    var displayModeResponse = ParseDisplayModeResponse(response.Substring(DISPLAY_MODE_RESPONSE_V1.Length + 1));
-                    if(displayModeResponse is not null) {
-                        _logger?.LogInformation("Triggering DisplayModeChanged event");
-                        LogDebugJson("DisplayModeChanged event", displayModeResponse);
-                        DisplayModeChanged?.Invoke(this, new(displayModeResponse));
-                    }
-                } else {
-                    _logger?.LogWarning($"Unrecognized event: '{Escape(prefix)}'");
-                }
-            }
-        }
-
-        private GetDisplayModeResponse ParseDisplayModeResponse(string response) {
+    //--- Methods ---
+    public Task<GetDeviceInfoResponse> GetDeviceInfoAsync()
+        => LogRequestResponse(async () => {
+            var response = await InternalQueryAsync("ZQS01").ConfigureAwait(false);
             var data = response.Split(",");
-            GetDisplayModeResponse info = new();
-
-            // parse fields based on column count in the respons
-            if(data.Length >= 23) {
-
-                // v4 data fields
-                info.DetectedAspectRatio = data[22];
-                info.DetectedRasterAspectRatio = data[21];
+            if(data.Length < 4) {
+                throw new InvalidDataException("invalid response");
             }
-            if(data.Length >= 21) {
+            return new GetDeviceInfoResponse(data[0], data[1], data[2], data[3]);
+        });
 
-                // v3 data fields
-                info.VirtualInputSelected = int.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture);
-                info.PhysicalInputSelected = int.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture);
+    public Task<GetDisplayModeResponse> GetDisplayModeAsync()
+        => LogRequestResponse(async () => {
+            var response = await InternalQueryAsync("ZQI24").ConfigureAwait(false);
+            return ParseDisplayModeResponse(response);
+        });
+
+    public Task<string> GetInputLabelAsync(RadianceProMemory memory, RadianceProInput input)
+        => LogRequestResponse(async () => SanitizeText(await InternalQueryAsync($"ZQS1{ToCommandCode(memory, allowAll: false)}{ToCommandCode(input)}").ConfigureAwait(false), maxLength: 10));
+
+    public Task SetInputLabelAsync(RadianceProMemory memory, RadianceProInput input, string value)
+        => LogRequest(() => InternalSendAsync("ZY524" + $"{ToCommandCode(memory, allowAll: true)}{ToCommandCode(input)}{SanitizeText(value, maxLength: 10)}" + "\r"));
+
+    public Task<string> GetCustomModeLabelAsync(RadianceProCustomMode customMode)
+        => LogRequestResponse(async () => SanitizeText(await InternalQueryAsync($"ZQS11{ToCommandCode(customMode)}").ConfigureAwait(false), maxLength: 7));
+
+    public Task SetCustomModeLabelAsync(RadianceProCustomMode customMode, string value)
+        => LogRequest(() => InternalSendAsync("ZY524" + $"1{ToCommandCode(customMode)}{SanitizeText(value, maxLength: 7)}" + "\r"));
+
+    public Task<string> GetCmsLabelAsync(RadianceProCms cms)
+        => LogRequestResponse(async () => SanitizeText(await InternalQueryAsync($"ZQS12{ToCommandCode(cms)}").ConfigureAwait(false), maxLength: 8));
+
+    public Task SetCmsLabelAsync(RadianceProCms cms, string value)
+        => LogRequest(() => InternalSendAsync("ZY524" + $"2{ToCommandCode(cms)}{SanitizeText(value, maxLength: 8)}" + "\r"));
+
+    public Task<string> GetStyleLabelAsync(RadianceProStyle style)
+        => LogRequestResponse(async () => SanitizeText(await InternalQueryAsync($"ZQS13{ToCommandCode(style)}").ConfigureAwait(false), maxLength: 8));
+
+    public Task SetStyleLabelAsync(RadianceProStyle style, string value)
+        => LogRequest(() => InternalSendAsync("ZY524" + $"3{ToCommandCode(style)}{SanitizeText(value, maxLength: 8)}" + "\r"));
+
+    public Task SelectMemoryAsync(RadianceProMemory memory)
+        => LogRequest(() => {
+            switch(memory) {
+            case RadianceProMemory.MemoryA:
+                return InternalSendAsync("a");
+            case RadianceProMemory.MemoryB:
+                return InternalSendAsync("b");
+            case RadianceProMemory.MemoryC:
+                return InternalSendAsync("c");
+            case RadianceProMemory.MemoryD:
+                return InternalSendAsync("d");
+            default:
+                throw new ArgumentException("invalid memory selection");
+            };
+        });
+
+    public Task ShowMessageAsync(string message, int seconds)
+        => LogRequest(() => {
+            if(message is null) {
+                throw new ArgumentNullException(nameof(message));
             }
-            if(data.Length >= 19) {
-
-                // v2 data fields
-                info.OutputColorSpace = data[15] switch {
-                    "0" => RadianceProColorSpace.CS601,
-                    "1" => RadianceProColorSpace.CS709,
-                    "2" => RadianceProColorSpace.CS2020,
-                    "3" => RadianceProColorSpace.CS2100,
-                    string invalid => throw new InvalidDataException($"invalid output color space: {invalid}")
-                };
-                info.SourceDynamicRange = data[16] switch {
-                    "0" => RadianceProDynamicRange.SDR,
-                    "1" => RadianceProDynamicRange.HDR,
-                    string invalid => throw new InvalidDataException($"invalid source dynamic range: {invalid}")
-                };
-                info.SourceVideoMode = data[17] switch {
-                    "i" => RadianceProVideoMode.Interlaced,
-                    "p" => RadianceProVideoMode.Progressive,
-
-                    // NOTE (2021-05-01, bjorg): the documentation uses "-", but support said that "n" is the correct response
-                    "n" => RadianceProVideoMode.NoVideo,
-                    "-" => RadianceProVideoMode.NoVideo,
-
-                    string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
-                };
-                info.OutputVideoMode = data[18] switch {
-                    "I" => RadianceProVideoMode.Interlaced,
-                    "P" => RadianceProVideoMode.Progressive,
-                    string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
-                };
+            if(message.Any(c => (c < 0x20) || (c > 0x7A))) {
+                throw new ArgumentOutOfRangeException(nameof(message), "characters must be >= ' ' (0x20) and <= 'z' (0x7A)");
             }
-            if(data.Length >= 15) {
-
-                // v1 data fields
-                info.InputStatus = data[0] switch {
-                    "0" => RadianceProInputStatus.NoSource,
-                    "1" => RadianceProInputStatus.ActiveVideo,
-                    "2" => RadianceProInputStatus.InternalPattern,
-                    string invalid => throw new InvalidDataException($"invalid input status: {invalid}")
-                };
-                info.SourceVerticalRate = data[1];
-                info.SourceVerticalResolution = data[2];
-                info.Source3DMode = data[3] switch {
-                    "0" => RadiancePro3D.Off,
-                    "1" => RadiancePro3D.FrameSequential,
-                    "2" => RadiancePro3D.FramePacked,
-                    "4" => RadiancePro3D.TopBottom,
-                    "8" => RadiancePro3D.SideBySide,
-                    string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
-                };
-                info.ActiveInputConfigNumber = data[4];
-                info.SourceRasterAspectRatio = data[5];
-                info.SourceContentAspectRatio = data[6];
-                info.OutputNonLinearStretchActive = data[7] switch {
-                    "-" => false,
-                    "N" => true,
-                    string invalid => throw new InvalidDataException($"invalid NLS mode: {invalid}")
-                };
-                info.Output3DMode = data[8] switch {
-                    "0" => RadiancePro3D.Off,
-                    "1" => RadiancePro3D.FrameSequential,
-                    "2" => RadiancePro3D.FramePacked,
-                    "4" => RadiancePro3D.TopBottom,
-                    "8" => RadiancePro3D.SideBySide,
-                    string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
-                };
-                info.OutputEnabled = int.Parse(data[9], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
-                info.OutputCms = data[10] switch {
-                    "0" => RadianceProCms.Cms0,
-                    "1" => RadianceProCms.Cms1,
-                    "2" => RadianceProCms.Cms2,
-                    "3" => RadianceProCms.Cms3,
-                    "4" => RadianceProCms.Cms4,
-                    "5" => RadianceProCms.Cms5,
-                    "6" => RadianceProCms.Cms6,
-                    "7" => RadianceProCms.Cms7,
-                    string invalid => throw new InvalidDataException($"invalid output cms: {invalid}")
-                };
-                info.OutputStyle = data[11] switch {
-                    "0" => RadianceProStyle.Style0,
-                    "1" => RadianceProStyle.Style1,
-                    "2" => RadianceProStyle.Style2,
-                    "3" => RadianceProStyle.Style3,
-                    "4" => RadianceProStyle.Style4,
-                    "5" => RadianceProStyle.Style5,
-                    "6" => RadianceProStyle.Style6,
-                    "7" => RadianceProStyle.Style7,
-                    string invalid => throw new InvalidDataException($"invalid output style: {invalid}")
-                };
-                info.OutputVerticalRate = data[12];
-                info.OutputVerticalResolution = data[13];
-                info.OutputAspectRatio = data[14];
+            if(message.Length > 60) {
+                throw new ArgumentOutOfRangeException(nameof(message), "string length must be <= 60 characters");
             }
-            return info;
+            if((seconds < 0) || (seconds > 9)) {
+                throw new ArgumentOutOfRangeException(nameof(seconds), "value must be >= 0 and <= 9");
+            }
+            return InternalSendAsync($"ZT{seconds}{message}\r");
+        });
+
+    public Task ClearMessageAsync()
+        => LogRequest(() => InternalSendAsync($"ZC"));
+
+    public Task SendAsync(string command)
+        => LogRequest(() => InternalSendAsync(command));
+
+    public Task<string> QueryAsync(string command)
+        => LogRequestResponse(async () => (await InternalQueryAsync(command)) ?? throw new InvalidOperationException("query returned null"));
+
+    public void Dispose() {
+        if(_disposed) {
+            return;
         }
+        _disposed = true;
+        _serialPort.DataReceived -= SerialDataReceived;
+        _mutex.Dispose();
+        if(_serialPort.IsOpen) {
+            _logger?.LogInformation("Closing serial port");
+            _serialPort.DiscardInBuffer();
+            _serialPort.DiscardOutBuffer();
+            _serialPort.Close();
+        } else {
+            _logger?.LogDebug("Serial port is already closed");
+        }
+        _serialPort.Dispose();
+    }
 
-        private void LogDebugJson(string message, object? response) {
-            if(_logger?.IsEnabled(LogLevel.Debug) ?? false) {
-                var serializedResponse = JsonSerializer.Serialize(response, g_jsonSerializerOptions);
-                _logger?.LogDebug($"{message}: {serializedResponse}");
+    private Task InternalSendAsync(string command)
+        => SendOrQueryAsync(command, expectResponse: false);
+
+    private async Task<string> InternalQueryAsync(string command)
+        => (await SendOrQueryAsync(command, expectResponse: true)) ?? throw new InvalidOperationException("query returned null");
+
+    private async Task<string?> SendOrQueryAsync(string command, bool expectResponse) {
+        CheckNotDisposed();
+        var buffer = Encoding.UTF8.GetBytes(command);
+        await _mutex.WaitAsync().ConfigureAwait(false);
+        try {
+            _logger?.LogTrace($"Sending command: '{Escape(command)}'");
+
+            // send message, await echo response and optional response message
+            if(expectResponse) {
+                TaskCompletionSource<string> responseSource = new();
+                try {
+                    _responseReceivedEvent += ReadResponse;
+                    await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                    return await responseSource.Task.ConfigureAwait(false);
+                } finally {
+                    _responseReceivedEvent -= ReadResponse;
+                }
+
+                // local functions
+                void ReadResponse(object? sender, string response) {
+
+                    // skip everything until the first comma (',')
+                    for(var i = 0; i < response.Length; ++i) {
+                        if(response[i] == ',') {
+                            response = response.Remove(0, i + 1);
+                            break;
+                        }
+                    }
+
+                    // terminator characters were received; indicate we're done by setting response
+                    responseSource.SetResult(response);
+                }
+            } else {
+                await _serialPort.BaseStream.WriteAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+                return null;
+            }
+        } finally {
+            _mutex.Release();
+        }
+    }
+
+    private void SerialDataReceived(object sender, SerialDataReceivedEventArgs args) {
+        var received = _serialPort.ReadExisting();
+        _logger?.LogTrace($"Received data: '{Escape(received)}'");
+
+        // loop while there is text to process
+        while(received.Length > 0) {
+            if(_accumulator.Length == 0) {
+
+                // check if received text contains a response marker
+                var index = received.IndexOf('!');
+                if(index < 0) {
+                    return;
+                }
+
+                // found beginning of a response
+                _accumulator = "!";
+
+                // continue by processing remainder of received text
+                received = received.Substring(index + 1);
+            } else {
+
+                // append received text
+                _accumulator += received;
+
+                // check if we found an end-of-response marker
+                var index = _accumulator.IndexOf("\r\n");
+                if(index < 0) {
+                    return;
+                }
+
+                // process response
+                var message = _accumulator.Substring(0, index);
+                _logger?.LogTrace($"Dispatching received response: '{Escape(message)}'");
+                _responseReceivedEvent?.Invoke(this, message);
+
+                // process remainder of accumulator as newly received text
+                received = _accumulator.Substring(index);
+                _accumulator = "";
             }
         }
+    }
 
-        private async Task<T> LogRequestResponse<T>(Func<Task<T>> callback, [CallerMemberName] string methodName = "") {
-            _logger?.LogDebug($"{methodName} request");
-            var response = await callback().ConfigureAwait(false);
-            LogDebugJson($"{methodName} response", response);
-            return response;
-        }
+    private void DispatchEvent(object? sender, string response) {
+        var prefix = response.Substring(0, 4);
+        if(prefix.StartsWith("!", StringComparison.Ordinal)) {
 
-        private Task LogRequest(Func<Task> callback, [CallerMemberName] string methodName = "") {
-            _logger?.LogDebug($"{methodName} request");
-            return callback();
-        }
-
-        private void CheckNotDisposed() {
-            if(_disposed) {
-                throw new ObjectDisposedException("client was disposed");
+            // parse display mode information event
+            const string DISPLAY_MODE_RESPONSE_V1 = "!I21";
+            const string DISPLAY_MODE_RESPONSE_V2 = "!I22";
+            const string DISPLAY_MODE_RESPONSE_V3 = "!I23";
+            const string DISPLAY_MODE_RESPONSE_V4 = "!I24";
+            if(
+                prefix.Equals(DISPLAY_MODE_RESPONSE_V1, StringComparison.Ordinal)
+                || prefix.Equals(DISPLAY_MODE_RESPONSE_V2, StringComparison.Ordinal)
+                || prefix.Equals(DISPLAY_MODE_RESPONSE_V3, StringComparison.Ordinal)
+                || prefix.Equals(DISPLAY_MODE_RESPONSE_V4, StringComparison.Ordinal)
+            ) {
+                var displayModeResponse = ParseDisplayModeResponse(response.Substring(DISPLAY_MODE_RESPONSE_V1.Length + 1));
+                if(displayModeResponse is not null) {
+                    _logger?.LogInformation("Triggering DisplayModeChanged event");
+                    LogDebugJson("DisplayModeChanged event", displayModeResponse);
+                    DisplayModeChanged?.Invoke(this, new(displayModeResponse));
+                }
+            } else {
+                _logger?.LogWarning($"Unrecognized event: '{Escape(prefix)}'");
             }
+        }
+    }
+
+    private GetDisplayModeResponse ParseDisplayModeResponse(string response) {
+        var data = response.Split(",");
+        GetDisplayModeResponse info = new();
+
+        // parse fields based on column count in the respons
+        if(data.Length >= 23) {
+
+            // v4 data fields
+            info.DetectedAspectRatio = data[22];
+            info.DetectedRasterAspectRatio = data[21];
+        }
+        if(data.Length >= 21) {
+
+            // v3 data fields
+            info.VirtualInputSelected = int.Parse(data[19], NumberStyles.Integer, CultureInfo.InvariantCulture);
+            info.PhysicalInputSelected = int.Parse(data[20], NumberStyles.Integer, CultureInfo.InvariantCulture);
+        }
+        if(data.Length >= 19) {
+
+            // v2 data fields
+            info.OutputColorSpace = data[15] switch {
+                "0" => RadianceProColorSpace.CS601,
+                "1" => RadianceProColorSpace.CS709,
+                "2" => RadianceProColorSpace.CS2020,
+                "3" => RadianceProColorSpace.CS2100,
+                string invalid => throw new InvalidDataException($"invalid output color space: {invalid}")
+            };
+            info.SourceDynamicRange = data[16] switch {
+                "0" => RadianceProDynamicRange.SDR,
+                "1" => RadianceProDynamicRange.HDR,
+                string invalid => throw new InvalidDataException($"invalid source dynamic range: {invalid}")
+            };
+            info.SourceVideoMode = data[17] switch {
+                "i" => RadianceProVideoMode.Interlaced,
+                "p" => RadianceProVideoMode.Progressive,
+
+                // NOTE (2021-05-01, bjorg): the documentation uses "-", but support said that "n" is the correct response
+                "n" => RadianceProVideoMode.NoVideo,
+                "-" => RadianceProVideoMode.NoVideo,
+
+                string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
+            };
+            info.OutputVideoMode = data[18] switch {
+                "I" => RadianceProVideoMode.Interlaced,
+                "P" => RadianceProVideoMode.Progressive,
+                string invalid => throw new InvalidDataException($"invalid source video mode: {invalid}")
+            };
+        }
+        if(data.Length >= 15) {
+
+            // v1 data fields
+            info.InputStatus = data[0] switch {
+                "0" => RadianceProInputStatus.NoSource,
+                "1" => RadianceProInputStatus.ActiveVideo,
+                "2" => RadianceProInputStatus.InternalPattern,
+                string invalid => throw new InvalidDataException($"invalid input status: {invalid}")
+            };
+            info.SourceVerticalRate = data[1];
+            info.SourceVerticalResolution = data[2];
+            info.Source3DMode = data[3] switch {
+                "0" => RadiancePro3D.Off,
+                "1" => RadiancePro3D.FrameSequential,
+                "2" => RadiancePro3D.FramePacked,
+                "4" => RadiancePro3D.TopBottom,
+                "8" => RadiancePro3D.SideBySide,
+                string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
+            };
+            info.ActiveInputConfigNumber = data[4];
+            info.SourceRasterAspectRatio = data[5];
+            info.SourceContentAspectRatio = data[6];
+            info.OutputNonLinearStretchActive = data[7] switch {
+                "-" => false,
+                "N" => true,
+                string invalid => throw new InvalidDataException($"invalid NLS mode: {invalid}")
+            };
+            info.Output3DMode = data[8] switch {
+                "0" => RadiancePro3D.Off,
+                "1" => RadiancePro3D.FrameSequential,
+                "2" => RadiancePro3D.FramePacked,
+                "4" => RadiancePro3D.TopBottom,
+                "8" => RadiancePro3D.SideBySide,
+                string invalid => throw new InvalidDataException($"invalid source 3D mode: {invalid}")
+            };
+            info.OutputEnabled = int.Parse(data[9], NumberStyles.HexNumber, CultureInfo.InvariantCulture);
+            info.OutputCms = data[10] switch {
+                "0" => RadianceProCms.Cms0,
+                "1" => RadianceProCms.Cms1,
+                "2" => RadianceProCms.Cms2,
+                "3" => RadianceProCms.Cms3,
+                "4" => RadianceProCms.Cms4,
+                "5" => RadianceProCms.Cms5,
+                "6" => RadianceProCms.Cms6,
+                "7" => RadianceProCms.Cms7,
+                string invalid => throw new InvalidDataException($"invalid output cms: {invalid}")
+            };
+            info.OutputStyle = data[11] switch {
+                "0" => RadianceProStyle.Style0,
+                "1" => RadianceProStyle.Style1,
+                "2" => RadianceProStyle.Style2,
+                "3" => RadianceProStyle.Style3,
+                "4" => RadianceProStyle.Style4,
+                "5" => RadianceProStyle.Style5,
+                "6" => RadianceProStyle.Style6,
+                "7" => RadianceProStyle.Style7,
+                string invalid => throw new InvalidDataException($"invalid output style: {invalid}")
+            };
+            info.OutputVerticalRate = data[12];
+            info.OutputVerticalResolution = data[13];
+            info.OutputAspectRatio = data[14];
+        }
+        return info;
+    }
+
+    private void LogDebugJson(string message, object? response) {
+        if(_logger?.IsEnabled(LogLevel.Debug) ?? false) {
+            var serializedResponse = JsonSerializer.Serialize(response, g_jsonSerializerOptions);
+            _logger?.LogDebug($"{message}: {serializedResponse}");
+        }
+    }
+
+    private async Task<T> LogRequestResponse<T>(Func<Task<T>> callback, [CallerMemberName] string methodName = "") {
+        _logger?.LogDebug($"{methodName} request");
+        var response = await callback().ConfigureAwait(false);
+        LogDebugJson($"{methodName} response", response);
+        return response;
+    }
+
+    private Task LogRequest(Func<Task> callback, [CallerMemberName] string methodName = "") {
+        _logger?.LogDebug($"{methodName} request");
+        return callback();
+    }
+
+    private void CheckNotDisposed() {
+        if(_disposed) {
+            throw new ObjectDisposedException("client was disposed");
         }
     }
 }
