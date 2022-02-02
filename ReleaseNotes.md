@@ -1,7 +1,11 @@
 # Release Notes
 
-## v1.2 (TBD)
 
+## v2.0 (TBD)
+
+### BREAKING CHANGES
+
+* Changed target framework to .NET 6.0.
 
 
 ## v1.1 (2021-10-26)
@@ -29,6 +33,7 @@
     * Trace: show wire communication
     * Debug: show parsed responses
     * Information: show commands and queries
+
 
 ## v1.0 (2021-10-25)
 
