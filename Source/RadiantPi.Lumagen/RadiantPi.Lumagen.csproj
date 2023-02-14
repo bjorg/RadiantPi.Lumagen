@@ -5,16 +5,17 @@
     <NoWarn>CS1998</NoWarn>
     <Deterministic>true</Deterministic>
     <Nullable>enable</Nullable>
+    <!-- <GenerateDocumentationFile>true</GenerateDocumentationFile> -->
 
     <PackageId>RadiantPi.Lumagen</PackageId>
-    <Version>1.2</Version>
+    <Version>2.0</Version>
     <Title>RadiantPi Lumagen Client Library</Title>
     <Description>Communication client for Lumagen RadiancePro</Description>
     <Copyright>Copyright (C) 2020-2021</Copyright>
     <Authors>Bjorg</Authors>
 
     <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/bjorg/RadiantPi</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/bjorg/RadiantPi.Lumagen</PackageProjectUrl>
     <PackageTags>Lumagen;RadiancePro</PackageTags>
     <PackageReadmeFile>ReadMe.md</PackageReadmeFile>
   </PropertyGroup>

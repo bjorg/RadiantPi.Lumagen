@@ -9,18 +9,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v2
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: 6.0.x
 
       # Build RadiantPi.Lumagen
-      - name: Restore dependencies
+      - name: Restore
         run: dotnet restore Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
       - name: Build
-        run: dotnet build --no-restore Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
+        run: dotnet build --no-restore --configuration Release Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
+      - name: Pack
+        run: dotnet pack --no-build --configuration Release --include-symbols -p:SymbolPackageFormat=snupkg -o . Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
 
       # Build Samples
       - name: Build HelloWorld Sample
@@ -31,7 +34,4 @@ jobs:
       # Publish RadiantPi.Lumagen
       - name: Publish
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: brandedoutcast/publish-nuget@v2.5.5
-        with:
-            PROJECT_FILE_PATH: Source/RadiantPi.Lumagen/RadiantPi.Lumagen.csproj
-            NUGET_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: dotnet nuget push *.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source "https://api.nuget.org/v3/index.json" --skip-duplicate

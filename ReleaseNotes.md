@@ -1,11 +1,12 @@
 # Release Notes
 
-
 ## v2.0 (TBD)
 
 ### BREAKING CHANGES
 
 * Changed target framework to .NET 6.0.
+
+> TODO
 
 
 ## v1.1 (2021-10-26)
